@@ -1,0 +1,15 @@
+CREATE TABLE IF NOT EXISTS user_settings_overrides (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  user_id BIGINT UNSIGNED NOT NULL,
+  category VARCHAR(64) NOT NULL,
+  name VARCHAR(64) NOT NULL,
+  value TINYTEXT NOT NULL,
+  expires_at DATETIME NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_user_setting (user_id, category, name),
+  KEY idx_user_setting_expires (expires_at),
+  CONSTRAINT fk_user_settings_user
+    FOREIGN KEY (user_id) REFERENCES users(id)
+    ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

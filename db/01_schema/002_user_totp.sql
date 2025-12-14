@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS user_totp (
+  user_id BIGINT UNSIGNED NOT NULL PRIMARY KEY,
+  is_enabled TINYINT(1) NOT NULL DEFAULT 0,
+
+  secret_enc VARBINARY(255) NULL,
+  secret_kid VARCHAR(32) NULL,
+  secret_nonce VARBINARY(24) NULL,
+
+  enabled_at DATETIME NULL,
+  last_used_step BIGINT NULL,
+
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+  KEY idx_user_totp_is_enabled (is_enabled),
+
+  CONSTRAINT fk_user_totp_user
+    FOREIGN KEY (user_id) REFERENCES users(id)
+    ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

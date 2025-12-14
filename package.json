@@ -1,0 +1,5 @@
+{
+  "scripts": {
+    "db:buildsql": "node scripts/generate-build-sql.mjs"
+  }
+}
