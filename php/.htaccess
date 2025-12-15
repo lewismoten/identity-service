@@ -1,0 +1,63 @@
+# --------------------------------------------
+# Identity Service - Apache Configuration
+# --------------------------------------------
+
+Options -Indexes
+AddDefaultCharset UTF-8
+RewriteEngine On
+
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "DENY"
+    Header always set Referrer-Policy "no-referrer"
+    Header always set Permissions-Policy "geolocation=(), microphone=(), camera=()"
+
+    # Never cache responses (auth-safe)
+    Header always set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+    Header always set Pragma "no-cache"
+    Header always set Expires "0"
+</IfModule>
+
+# --------------------------------------------
+# Block direct access to *.php in URLs (but allow internal rewrites)
+# --------------------------------------------
+RewriteCond %{THE_REQUEST} \s/+(.+?)\.php[\s?] [NC]
+RewriteRule ^ - [R=404,L]
+
+# --------------------------------------------
+# Allow only API and well-known discovery endpoints
+# --------------------------------------------
+RewriteRule ^(?!api/|\.well-known/).*$ - [F]
+
+# --------------------------------------------
+# Allow CORS preflight through untouched
+# --------------------------------------------
+RewriteCond %{REQUEST_METHOD} OPTIONS
+RewriteRule ^ - [L]
+
+# --------------------------------------------
+# Do NOT rewrite real files or directories
+# --------------------------------------------
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# --------------------------------------------
+# Clean API routing:
+# /api/login        → /api/login.php
+# /api/auth/login   → /api/auth/login.php
+# --------------------------------------------
+RewriteRule ^api/(.+)$ api/$1.php [L,QSA]
+
+# --------------------------------------------
+# Well-known routing
+# e.g. /.well-known/openid-configuration -> /.well-known/openid-configuration.php
+# --------------------------------------------
+RewriteRule ^\.well-known/(.+)$ .well-known/$1.php [L,QSA]
+
+# --------------------------------------------
+# Deny access to sensitive files
+# --------------------------------------------
+<FilesMatch "(^\.|\.env|composer\.json|composer\.lock|package\.json|package-lock\.json)">
+    Require all denied
+</FilesMatch>

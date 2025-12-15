@@ -5,6 +5,7 @@ VALUES
 ('mfa', 'require_primary_mfa', '1', 'Require one MFA method to be marked as primary', 0, 0, 'boolean'),
 ('mfa', 'require_mfa_for_login', '0', 'Require MFA for all logins', 0, 0, 'boolean'),
 ('mfa', 'require_mfa_for_sensitive_actions', '1', 'Require MFA for sensitive account actions', 0, 0, 'boolean'),
+('mfa', 'login_challenge_ttl_seconds', '300', 'MFA login challenge TTL in seconds', 0, 0, 'int'),
 
 -- Method availability
 ('mfa', 'allow_totp', '1', 'Allow TOTP-based MFA', 0, 0, 'boolean'),

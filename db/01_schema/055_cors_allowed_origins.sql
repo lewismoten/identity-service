@@ -1,0 +1,10 @@
+CREATE TABLE IF NOT EXISTS cors_allowed_origins (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  origin VARCHAR(255) NOT NULL,
+  is_enabled TINYINT(1) NOT NULL DEFAULT 1,
+  allow_credentials TINYINT(1) NOT NULL DEFAULT 0,
+  notes VARCHAR(255) NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_origin (origin),
+  KEY idx_enabled (is_enabled)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
