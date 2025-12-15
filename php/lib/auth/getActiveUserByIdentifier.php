@@ -1,5 +1,5 @@
 <?php 
-function getActiveUserById($identifier) {
+function getActiveUserByIdentifier(string $identifier): array {
   return db()
     ->prepare("
       SELECT *

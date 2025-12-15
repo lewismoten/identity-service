@@ -2,23 +2,21 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../../bootstrap.php';
-require_once __DIR__ . '/../../lib/auth/getActiveUserById.php';
+require_once __DIR__ . '/../../lib/auth/getActiveUserByIdentifier.php';
 require_once __DIR__ . '/../../lib/auth/logFailedAttempt.php';
 require_once __DIR__ . '/../../lib/auth/isAccountLocked.php';
 require_once __DIR__ . '/../../lib/auth/isMfaRequired.php';
 require_once __DIR__ . '/../../lib/auth/audit.php';
 require_once __DIR__ . '/../../lib/auth/createAuthSession.php';
+require_once __DIR__ . '/../../lib/auth/rehashPasswordForUserId.php';
+require_once __DIR__ . '/../../lib/auth/updateLastLoginForUserId.php';
 
 Cors::handle('POST,OPTIONS');
 
 $ip        = $_SERVER['REMOTE_ADDR'] ?? null;
-$userAgent= $_SERVER['HTTP_USER_AGENT'] ?? null;
+$userAgent = $_SERVER['HTTP_USER_AGENT'] ?? null;
 
-if(!postMethodCheck()) {
-  exit;
-}
-
-$input = getPostedInput();
+$input = Json::getPostedInput();
 
 $identifier = trim($input['identifier'] ?? '');
 $password   = $input['password'] ?? '';
@@ -27,58 +25,58 @@ if ($identifier === '' || $password === '') {
   Json::sendError('missing_credentials', HttpStatus::BAD_REQUEST);
 }
 
-$user = getActiveUserById($identifier);
+$user = getActiveUserByIdentifier($identifier);
 if (!$user) {
     logFailedAttempt(null, $identifier, $ip);
     Json::sendError('invalid_credentials', HttpStatus::UNAUTHORIZED);
 }
 
-if (isAccountLocked($user['id'], $ip)) {
-    audit($user['id'], 'login.locked', $ip, $userAgent);
+$userid = (int)$user['id'];
+
+if (isAccountLocked($userid, $ip)) {
+    audit($userid, 'login.locked', $ip, $userAgent);
     Json::sendError('account_locked', HttpStatus::LOCKED);
     exit;
 }
 
-if (!password_verify($password, $user['password_hash'])) {
-    logFailedAttempt($user['id'], $identifier, $ip);
-    handleLockoutEscalation($user['id'], $ip);
+$passwordhash = $user['password_hash'];
+if (!password_verify($password, $passwordhash)) {
+    logFailedAttempt($userid, $identifier, $ip);
+    handleLockoutEscalation($userid, $ip);
 
-    audit($user['id'], 'login.failed', $ip, $userAgent);
+    audit($userid, 'login.failed', $ip, $userAgent);
     Json::sendError('invalid_credentials', HttpStatus::UNAUTHORIZED);
     exit;
 }
 
-if (password_needs_rehash($user['password_hash'], PASSWORD_ARGON2ID)) {
-    $newHash = password_hash($password, PASSWORD_ARGON2ID);
-    $upd = db()->prepare("UPDATE users SET password_hash=? WHERE id=?");
-    $upd->execute([$newHash, $user['id']]);
+if (password_needs_rehash($passwordhash, PASSWORD_ARGON2ID)) {
+    rehashPasswordForUserId($userid, $password);
 }
 
-$mfaRequired = isMfaRequired($user['id']);
+$mfaRequired = isMfaRequired($userid);
 
 if ($mfaRequired) {
-    $challengeId = createMfaChallenge($user['id'], $ip, $userAgent);
+    $challengeId = createMfaChallenge($userid, $ip, $userAgent);
 
-    audit($user['id'], 'login.mfa_required', $ip, $userAgent);
+    audit($userid, 'login.mfa_required', $ip, $userAgent);
 
     Json::sendData([
         'status'        => 'mfa_required',
         'challenge_id'  => $challengeId,
-        'methods'       => getAvailableMfaMethods($user['id']),
+        'methods'       => getAvailableMfaMethods($userid),
     ], HttpStatus::OK);
 }
 
-$session = createAuthSession($user['id'], $ip, $userAgent);
+$session = createAuthSession($userid, $ip, $userAgent);
 
-db()->prepare("UPDATE users SET last_login_at = NOW() WHERE id=?")
-   ->execute([$user['id']]);
+updateLastLoginForUserId($userid);
 
-audit($user['id'], 'login.success', $ip, $userAgent);
+audit($userid, 'login.success', $ip, $userAgent);
 
 Json::sendData([
     'status'        => 'ok',
     'user' => [
-        'id'       => (int)$user['id'],
+        'id'       => $userid,
         'username' => $user['username'],
         'email'    => $user['email'],
     ],
