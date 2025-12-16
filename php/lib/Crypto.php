@@ -2,7 +2,7 @@
 
 final class Crypto
 {
-  public function newId(): string {
+  public function new_id(): string {
     return uuid_create(UUID_TYPE_RANDOM);
   }
   /**
@@ -23,20 +23,13 @@ final class Crypto
   /**
    * Timing-safe equality for binary hashes.
    */
-  public function equals(string $a, string $b): bool {
-      return hash_equals($a, $b);
+  public function equals(string $known_string, string $user_string): bool {
+      return hash_equals($known_string, $user_string);
   }
   /**
    * Generate URL-safe random token.
    */
   public function random_token(int $bytes = 32): string {
       return rtrim(strtr(base64_encode(random_bytes($bytes)), '+/', '-_'), '=');
-  }
-
-  /**
-   * Hash a public token for DB storage.
-   */
-  public function hash_token(string $token): string {
-      return hash_bin($token);
   }
 }

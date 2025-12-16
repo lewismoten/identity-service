@@ -88,7 +88,7 @@ final class Json
   }
   public static function requireMethod(string $method): void {
     if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === $method) return;
-    header("Allow: {$method}");
+    \HttpResponse::allowMethods($method);
     self::sendError('method_not_allowed', HttpStatus::METHOD_NOT_ALLOWED);
   }
   public static function sendError(
@@ -105,18 +105,15 @@ final class Json
     mixed $data, 
     int $status_code = HttpStatus::OK
   ): void {
-    header('Content-Type: application/json; charset=utf-8');
 
-    // Prevent caching of responses
-    header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
-    header('Pragma: no-cache');
-    header('Expires: 0');
-    header('X-Content-Type-Options: nosniff');
-    
-    http_response_code($status_code);
-    echo json_encode(
-      $data,
-      JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE
+    \HttpResponse::setContentType('application/json');
+    \HttpResponse::noCache();
+    \HttpResponse::setStatusCode($status_code);
+    \HttpResponse::output(
+      json_encode(
+        $data,
+        JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE
+      )
     );
     exit;
   }

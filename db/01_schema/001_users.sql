@@ -15,5 +15,7 @@ CREATE TABLE IF NOT EXISTS users (
   UNIQUE KEY uq_users_username (username),
   UNIQUE KEY uq_users_email (email),
   KEY idx_users_is_active (is_active),
-  KEY idx_users_email_verified_at (email_verified_at)
+  KEY idx_users_email_verified_at (email_verified_at),
+  INDEX idx_users_username_active (username, is_active),
+  INDEX idx_users_email_active (email, is_active)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

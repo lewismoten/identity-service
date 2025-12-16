@@ -12,23 +12,23 @@ final class Db
             return self::$config;
         }
 
-        $configPath = dirname(__DIR__) . '/../config/database.php';
+        $configPath = dirname(__DIR__) . '/config/database.php';
 
         if (!is_file($configPath)) {
-          Json::sendError('database_config_missing', HttpStatus::INTERNAL_SERVER_ERROR);
+          throw new \RuntimeException('database_config_missing');
         }
         $cfg = require $configPath;
         if (!is_array($cfg)) {
-            http_response_code(HttpStatus::INTERNAL_SERVER_ERROR);
-            Json::sendError('database_config_invalid', HttpStatus::INTERNAL_SERVER_ERROR);
+          http_response_code(HttpStatus::INTERNAL_SERVER_ERROR);
+          throw new \RuntimeException('database_config_invalid');
         }
 
         self::$config = [
-            'host'     => getenv('DB_HOST') ?: $cfg['host'] ?: 'localhost',
-            'port'     => getenv('DB_PORT') ?: $cfg['port'] ?: '3306',
-            'database' => getenv('DB_NAME') ?: $cfg['database'] ?: 'identity',
-            'username' => getenv('DB_USER') ?: $cfg['username'] ?: 'identity_user',
-            'password' => getenv('DB_PASS') ?: $cfg['password'] ?: '',
+            'host'     => getenv('DB_HOST') ?: $cfg['host'] ?? 'localhost',
+            'port'     => getenv('DB_PORT') ?: $cfg['port'] ?? '3306',
+            'database' => getenv('DB_NAME') ?: $cfg['database'] ?? 'identity',
+            'username' => getenv('DB_USER') ?: $cfg['username'] ?? 'identity_user',
+            'password' => getenv('DB_PASS') ?: $cfg['password'] ?? '',
             'charset'  => $cfg['charset'] ?? 'utf8mb4',
             'timezone' => $cfg['timezone'] ?? '+00:00',
         ];
@@ -65,10 +65,11 @@ final class Db
               $cfg['password'],
               $options
             );
-            self::$pdo->exec("SET time_zone = '{$cfg['timezone']}'");
+            $stmt = self::$pdo->prepare("SET time_zone = ?");
+            $stmt->execute([$cfg['timezone']]);
 
         } catch (\PDOException $e) {
-          Json::sendError('database_unavailable', HttpStatus::INTERNAL_SERVER_ERROR);
+          throw new \RuntimeException('database_unavailable');
         }
 
         return self::$pdo;

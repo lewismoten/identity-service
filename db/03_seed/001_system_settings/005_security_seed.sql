@@ -6,7 +6,9 @@ VALUES
 ('security','lockout_escalation_enabled','1','Enable escalating lockouts',0,0,'boolean'),
 ('security','max_lockout_duration_minutes','1440','Maximum lockout duration',0,0,'int'),
 ('security','lockout_by_ip_enabled','1','Enable IP-based lockouts',0,0,'boolean'),
-('security','log_failed_logins','1','Log failed login attempts',0,0,'boolean')
+('security','log_failed_logins','1','Log failed login attempts',0,0,'boolean'),
+('security', 'lockout_recent_hours', '24', 'Hours to check for recent lockouts', 0, 0, 'int')
+('security', 'lockout_escalation_max', '5', 'Max number of times to double lockout duration minutes based on recent lockouts', 0, 0, 'int')
 ON DUPLICATE KEY UPDATE
   value = VALUES(value),
   description = VALUES(description),
